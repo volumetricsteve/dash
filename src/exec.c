@@ -148,6 +148,38 @@ shellexec(char **argv, const char *path, int idx)
 }
 
 
+/*
+ * Check if an executable that just failed with ENOEXEC shouldn't be
+ * considered a script (wrong-arch ELF/PE, junk accidentally set +x, etc).
+ * We check only the first line to allow binaries encapsulated in a shell
+ * script without proper quoting.  The first line, if not a hashbang, is
+ * likely to contain comments; even ancient encodings, at least popular
+ * ones, don't use 0x7f nor values below 0x1f other than whitespace (\t,
+ * \n, \v, \f, \r), ISO/IEC 2022 can have SI, SO and \e).
+ */
+STATIC int file_is_binary(const char *cmd)
+{
+	char buf[128];
+	int fd = open(cmd, O_RDONLY|O_NOCTTY);
+	if (fd == -1)
+		return 1;
+	int len = read(fd, buf, sizeof(buf));
+	for (int i = 0; i < len; ++i) {
+		char c = buf[i];
+		if (c >= 0 && c <= 8 ||
+		    c >= 16 && c <= 31 && c != 27 ||
+		    c == 0x7f) {
+			close(fd);
+			return 1;
+		}
+		if (c == '\n')
+			return 0;
+	}
+	close(fd);
+	return 0;
+}
+
+
 STATIC void
 tryexec(char *cmd, char **argv, char **envp)
 {
@@ -162,6 +194,8 @@ repeat:
 	execve(cmd, argv, envp);
 #endif
 	if (cmd != path_bshell && errno == ENOEXEC) {
+		if (file_is_binary(cmd))
+			return;
 		*argv-- = cmd;
 		*argv = cmd = path_bshell;
 		goto repeat;

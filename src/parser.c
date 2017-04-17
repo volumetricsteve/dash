@@ -926,6 +926,9 @@ readtoken1(int firstc, char const *syntax, char *eofmark, int striptabs)
 						c != '$' && (
 							c != '"' ||
 							eofmark != NULL
+						) && (
+							c != '}' ||
+							varnest == 0
 						)
 					) {
 						USTPUTC('\\', out);

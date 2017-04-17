@@ -300,6 +300,7 @@ conv_escape(char *str, int *conv_ch)
 	case '\\':	value = '\\';	break;	/* backslash */
 	case 'a':	value = '\a';	break;	/* alert */
 	case 'b':	value = '\b';	break;	/* backspace */
+	case 'e':	value = '\e';	break;  /* escape */
 	case 'f':	value = '\f';	break;	/* form-feed */
 	case 'n':	value = '\n';	break;	/* newline */
 	case 'r':	value = '\r';	break;	/* carriage-return */

@@ -489,8 +489,19 @@ equalf (const char *f1, const char *f2)
 }
 
 #ifdef HAVE_FACCESSAT
+static int has_exec_bit_set(const char *path)
+{
+	struct stat64 st;
+
+	if (stat64(path, &st))
+		return 0;
+	return st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH);
+}
+
 static int test_file_access(const char *path, int mode)
 {
+	if (mode == X_OK && geteuid() == 0 && !has_exec_bit_set(path))
+		return 0;
 	return !faccessat(AT_FDCWD, path, mode, AT_EACCESS);
 }
 #else	/* HAVE_FACCESSAT */
